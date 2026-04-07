@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Validar Certificado - CCD (Drive)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0c15;
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .main-container {
+            max-width: 1000px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 4rem;
+        }
+        .code-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            animation: fadeUp 0.6s ease;
+        }
+        .code-section h1 {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(0,255,255,0.5);
+        }
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+        }
+        .input-code {
+            width: 100%;
+            background: #1a1b26;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 0.75rem;
+            padding: 0.85rem 5rem 0.85rem 1.25rem;
+            color: white;
+            font-size: 1rem;
+            font-family: monospace;
+            letter-spacing: 1px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .input-code:focus {
+            border-color: #00e5ff;
+            box-shadow: 0 0 8px rgba(0,229,255,0.3);
+        }
+        .btn-verify {
+            position: absolute;
+            top: 50%;
+            right: 4px;
+            transform: translateY(-50%);
+            background: #3b82f6;
+            border: none;
+            border-bottom: 4px solid #1e40af;
+            color: white;
+            font-weight: bold;
+            padding: 0.5rem 1.2rem;
+            border-radius: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .btn-verify:hover {
+            background: #60a5fa;
+            transform: translateY(-50%) scale(1.02);
+        }
+        .points-section {
+            text-align: center;
+            animation: fadeUp 0.8s ease;
+        }
+        .points-title {
+            color: #00e5ff;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+        .points-title span { font-size: 1.8rem; }
+        .main-badge {
+            color: white;
+            font-size: 2rem;
+            font-weight: 800;
+            text-shadow: 0 0 5px cyan;
+            margin-bottom: 2rem;
+        }
+        .grid-points {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2.5rem;
+            margin-top: 1rem;
+        }
+        .point-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            transition: transform 0.2s;
+        }
+        .point-card:hover { transform: scale(1.05); }
+        .icon-circle {
+            background: transparent;
+            border: 4px solid #00e5ff;
+            border-radius: 9999px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .point-card:hover .icon-circle {
+            transform: scale(1.1);
+            background: rgba(0,229,255,0.1);
+        }
+        .icon-circle i { font-size: 2rem; color: #00e5ff; }
+        .point-title { color: white; font-size: 1.2rem; font-weight: 500; }
+        .point-desc { color: #9ca3af; font-size: 0.85rem; text-align: center; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 900px;
+            height: 80%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            position: relative;
+            padding: 1rem;
+            background: #1f2a3e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .cert-found-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(34, 197, 94, 0.25);
+            padding: 0.5rem 1.2rem;
+            border-radius: 60px;
+        }
+        .check-circle {
+            background-color: #22c55e;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+        }
+        .cert-found-text {
+            font-weight: 700;
+            color: #22c55e;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+        .close-modal {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: white;
+            transition: 0.2s;
+            line-height: 1;
+        }
+        .close-modal:hover { color: #f5b042; }
+        .modal-body { flex: 1; padding: 0; }
+        .modal-body iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            padding: 0.8rem;
+            background: #f8f9fa;
+            border-top: 1px solid #e5e7eb;
+        }
+        .btn-download {
+            background: #1f3b2c;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: 0.2s;
+        }
+        .btn-download:hover {
+            background: #2d5a42;
+            transform: scale(1.02);
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .points-title span { font-size: 1.2rem; }
+            .main-badge span { font-size: 1.3rem; }
+            .grid-points { gap: 1.5rem; }
+            .modal-content { width: 95%; height: 85%; }
+            .cert-found-badge { padding: 0.3rem 0.8rem; }
+            .check-circle { width: 26px; height: 26px; font-size: 0.9rem; }
+            .cert-found-text { font-size: 0.85rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+<div class="main-container">
+    <div class="code-section">
+        <h1>Ingrese el código de verificación</h1>
+        <div class="input-wrapper">
+            <input type="text" class="input-code" id="codigoInput" value="" placeholder="Ejemplo: 823B8KIQ1OS7CFR7XJRE">
+            <button class="btn-verify" id="verificarBtn">Verificar</button>
+        </div>
+        <div id="mensajeValidacion" style="color: #ffaa44; font-size: 0.8rem; min-height: 2rem;"></div>
+    </div>
+
+    <div class="points-section">
+        <div class="points-title"><span>4 Puntos Necesarios para...</span></div>
+        <div class="main-badge"><span>VALIDAR TU CERTIFICADO</span></div>
+        <div class="grid-points">
+            <div class="point-card">
+                <div class="icon-circle"><i class="fas fa-qrcode"></i></div>
+                <div class="point-title">QR de verificación</div>
+                <div class="point-desc">Código web + QR</div>
+            </div>
+            <div class="point-card">
+                <div class="icon-circle"><i class="fas fa-chart-line"></i></div>
+                <div class="point-title">Nota aprobatoria</div>
+                <div class="point-desc">Mínimo 14 puntos</div>
+            </div>
+            <div class="point-card">
+                <div class="icon-circle"><i class="fas fa-book-open"></i></div>
+                <div class="point-title">Contenido</div>
+                <div class="point-desc">Cursos especializados</div>
+            </div>
+            <div class="point-card">
+                <div class="icon-circle"><i class="fas fa-file-signature"></i></div>
+                <div class="point-title">Firma</div>
+                <div class="point-desc">Firmas académicas</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal con badge centrado y texto verde igual al círculo -->
+<div id="certModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="cert-found-badge">
+                <span class="check-circle"><i class="fas fa-check"></i></span>
+                <span class="cert-found-text">CERTIFICADO ENCONTRADO</span>
+            </div>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <iframe id="pdfFrame" src="about:blank" title="Certificado"></iframe>
+        </div>
+        <div class="modal-footer">
+            <button id="downloadPdfBtn" class="btn-download"><i class="fas fa-download"></i> Descargar certificado</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==================== BASE DE DATOS DE CERTIFICADOS ====================
+    // Solo los 3 códigos solicitados (los otros dos han sido eliminados)
+    const certificadosDB = {
+        "823B8KIQ1OS7CFR7XJRE": {
+            preview: "https://drive.google.com/file/d/1sfyjgabJq45Ymp8AtYDlDHxNBpj8U3Ws/preview",
+            direct: "https://drive.google.com/file/d/1sfyjgabJq45Ymp8AtYDlDHxNBpj8U3Ws/view?usp=drive_link"
+        },
+        "8U7M7RO96NOE2DPIVPMI": {
+            preview: "https://drive.google.com/file/d/1Tmsb9q8ypgXk1DhaxKJw2_qzENhugm88/preview",
+            direct: "https://drive.google.com/file/d/1Tmsb9q8ypgXk1DhaxKJw2_qzENhugm88/view?usp=drive_link"
+        },
+        "822B8KIQ1OS8CFM7XLNC": {
+            preview: "https://drive.google.com/file/d/1fTTP_fcY8CojN9P_dfc_Wffhlez6DbNc/preview",
+            direct: "https://drive.google.com/file/d/1fTTP_fcY8CojN9P_dfc_Wffhlez6DbNc/view?usp=drive_link"
+        }
+    };
+
+    const modal = document.getElementById('certModal');
+    const pdfFrame = document.getElementById('pdfFrame');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const verificarBtn = document.getElementById('verificarBtn');
+    const inputCodigo = document.getElementById('codigoInput');
+    const mensajeDiv = document.getElementById('mensajeValidacion');
+    const downloadBtn = document.getElementById('downloadPdfBtn');
+
+    let currentDirectUrl = "";
+
+    function abrirModal(previewUrl, directUrl) {
+        pdfFrame.src = previewUrl;
+        currentDirectUrl = directUrl;
+        downloadBtn.onclick = () => window.open(currentDirectUrl, '_blank');
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModal() {
+        modal.style.display = 'none';
+        pdfFrame.src = 'about:blank';
+        currentDirectUrl = "";
+    }
+
+    closeModalBtn.addEventListener('click', cerrarModal);
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarModal();
+    });
+
+    verificarBtn.addEventListener('click', () => {
+        const codigo = inputCodigo.value.trim();
+        if (codigo === "") {
+            mensajeDiv.innerHTML = '⚠️ Ingrese un código de verificación.';
+            mensajeDiv.style.color = '#ffaa44';
+            setTimeout(() => {
+                if (mensajeDiv.innerHTML.includes('Ingrese')) mensajeDiv.innerHTML = '';
+            }, 3000);
+            return;
+        }
+        const certificado = certificadosDB[codigo];
+        if (certificado) {
+            mensajeDiv.innerHTML = '';
+            abrirModal(certificado.preview, certificado.direct);
+        } else {
+            mensajeDiv.innerHTML = '❌ Código incorrecto. Verifique e intente nuevamente.';
+            mensajeDiv.style.color = '#ff6b6b';
+            setTimeout(() => {
+                if (mensajeDiv.innerHTML.includes('incorrecto')) mensajeDiv.innerHTML = '';
+            }, 3000);
+        }
+    });
+
+    inputCodigo.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') verificarBtn.click();
+    });
+</script>
+</body>
+</html>
